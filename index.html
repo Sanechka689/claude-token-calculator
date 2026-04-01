@@ -74,6 +74,13 @@
       background: #fff;
     }
 
+    .field-hint {
+      font-size: 11px;
+      color: #aaa;
+      margin-top: 3px;
+      min-height: 16px;
+    }
+
     .limits-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -143,7 +150,6 @@
     }
 
     /* Progress bars */
-    .bar-section { }
     .bar-item { margin-bottom: 14px; }
     .bar-item:last-child { margin-bottom: 0; }
 
@@ -151,10 +157,10 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
     .bar-title { font-size: 13px; font-weight: 600; color: #333; }
-    .bar-stats { font-size: 12px; color: #888; }
+    .bar-pct { font-size: 13px; font-weight: 600; }
 
     .bar-track {
       height: 12px;
@@ -174,6 +180,7 @@
       align-items: center;
       margin-top: 5px;
     }
+    .bar-approx { font-size: 11px; color: #aaa; }
     .bar-remaining { font-size: 12px; color: #888; }
     .btn-update {
       font-size: 11px;
@@ -183,6 +190,7 @@
       background: #fff;
       color: #555;
       cursor: pointer;
+      white-space: nowrap;
     }
     .btn-update:hover { background: #f0f0f0; }
 
@@ -214,6 +222,16 @@
     .part-box .part-label { color: #888; margin-bottom: 2px; }
     .part-box .part-val { font-weight: 600; font-size: 14px; }
 
+    .next-msg-hint {
+      margin-top: 10px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      background: #f0f6ff;
+      color: #5080b0;
+      border: 1px solid #d0e4ff;
+    }
+
     @media (max-width: 400px) {
       body { padding: 10px; }
       .limits-row { grid-template-columns: 1fr; }
@@ -232,11 +250,13 @@
   <label for="overhead">Overhead (токены системного промпта)</label>
   <input type="number" id="overhead" value="16500" min="0" placeholder="16500">
 
-  <label for="used5h">Израсходовано в 5-часовом окне</label>
-  <input type="number" id="used5h" value="0" min="0" placeholder="0">
+  <label for="pct5h">Израсходовано в 5-часовом окне (%)</label>
+  <input type="number" id="pct5h" value="0" min="0" max="100" step="0.1" placeholder="0">
+  <div class="field-hint" id="hint5h">≈ 0 из 44 000 токенов</div>
 
-  <label for="used7d">Израсходовано за 7 дней</label>
-  <input type="number" id="used7d" value="0" min="0" placeholder="0">
+  <label for="pct7d">Израсходовано за 7 дней (%)</label>
+  <input type="number" id="pct7d" value="0" min="0" max="100" step="0.1" placeholder="0">
+  <div class="field-hint" id="hint7d">≈ 0 из 300 000 токенов</div>
 
   <div class="limits-row">
     <div class="limit-box">
@@ -252,34 +272,40 @@
   </div>
 </section>
 
-<!-- Section 4: Прогресс-бары (показываем сразу после настроек) -->
+<!-- Section 4: Прогресс-бары -->
 <section>
   <h2>Использование лимитов</h2>
-  <div class="bar-section">
+  <div>
     <div class="bar-item">
       <div class="bar-header">
         <span class="bar-title">5-часовое окно</span>
-        <span class="bar-stats" id="stats5h">0 / 44 000</span>
+        <span class="bar-pct" id="bar-pct5h">0% использовано</span>
       </div>
       <div class="bar-track">
         <div class="bar-fill" id="fill5h" style="width:0%"></div>
       </div>
       <div class="bar-footer">
-        <span class="bar-remaining" id="rem5h">Осталось 44 000 токенов (100%)</span>
-        <button class="btn-update" onclick="document.getElementById('used5h').focus()">Обновить</button>
+        <div>
+          <div class="bar-approx" id="approx5h">≈ 0 / 44 000 токенов</div>
+          <div class="bar-remaining" id="rem5h">Осталось 44 000 токенов (100%)</div>
+        </div>
+        <button class="btn-update" onclick="document.getElementById('pct5h').focus()">Обновить</button>
       </div>
     </div>
     <div class="bar-item">
       <div class="bar-header">
         <span class="bar-title">7-дневное окно</span>
-        <span class="bar-stats" id="stats7d">0 / 300 000</span>
+        <span class="bar-pct" id="bar-pct7d">0% использовано</span>
       </div>
       <div class="bar-track">
         <div class="bar-fill" id="fill7d" style="width:0%"></div>
       </div>
       <div class="bar-footer">
-        <span class="bar-remaining" id="rem7d">Осталось 300 000 токенов (100%)</span>
-        <button class="btn-update" onclick="document.getElementById('used7d').focus()">Обновить</button>
+        <div>
+          <div class="bar-approx" id="approx7d">≈ 0 / 300 000 токенов</div>
+          <div class="bar-remaining" id="rem7d">Осталось 300 000 токенов (100%)</div>
+        </div>
+        <button class="btn-update" onclick="document.getElementById('pct7d').focus()">Обновить</button>
       </div>
     </div>
   </div>
@@ -346,18 +372,45 @@
         <span class="label">% от 7дн лимита</span>
         <span class="value" id="d-pct7d">—</span>
       </div>
-      <div class="result-row" style="padding-top:6px;">
-        <span class="label" style="font-weight:600;color:#333;">Следующее сообщение будет стоить</span>
-        <span class="value" id="d-next-tokens" style="font-size:15px;">—</span>
-      </div>
-      <div class="result-row">
-        <span class="label">% от остатка 5ч</span>
-        <span class="value" id="d-next-pct5h">—</span>
-      </div>
-      <div class="forecast" id="d-forecast"></div>
     </div>
+    <div class="next-msg-hint">Вставьте следующее сообщение в блок ниже — увидите точный прогноз запроса</div>
   </div>
   <div class="empty-hint" id="dialog-hint">Начните вводить текст — расчёт появится автоматически</div>
+</section>
+
+<!-- Section 5: Следующее сообщение -->
+<section>
+  <h2>Следующее сообщение</h2>
+  <textarea id="next-input" placeholder="Вставьте следующее сообщение, которое хотите отправить в этот диалог..." rows="4"></textarea>
+
+  <div class="result-box" id="next-result">
+    <div class="result-row">
+      <span class="label">Токены нового сообщения</span>
+      <span class="value" id="n-msg-tokens">—</span>
+    </div>
+    <div class="result-row">
+      <span class="label">Диалог</span>
+      <span class="value" id="n-dialog-tokens">—</span>
+    </div>
+    <div class="result-row">
+      <span class="label">+ Overhead</span>
+      <span class="value" id="n-overhead-val">—</span>
+    </div>
+    <div class="result-row" style="padding-top:6px;">
+      <span class="label" style="font-weight:600;color:#333;">Итого токенов запроса</span>
+      <span class="value" id="n-total-tokens" style="font-size:15px;">—</span>
+    </div>
+    <div class="result-row">
+      <span class="label">% от остатка 5ч окна</span>
+      <span class="value" id="n-pct5h">—</span>
+    </div>
+    <div class="result-row">
+      <span class="label">% от остатка 7дн окна</span>
+      <span class="value" id="n-pct7d">—</span>
+    </div>
+    <div class="forecast" id="n-forecast"></div>
+  </div>
+  <div class="empty-hint" id="next-hint">Вставьте новое сообщение — расчёт появится автоматически</div>
 </section>
 
 <script>
@@ -379,16 +432,31 @@
 
   function loadSettings() {
     document.getElementById('overhead').value = load('overhead', DEFAULT_OVERHEAD);
-    document.getElementById('used5h').value  = load('used5h', 0);
-    document.getElementById('used7d').value  = load('used7d', 0);
+
+    // Миграция: старые ключи used5h/used7d хранили токены, новые pct5h/pct7d — проценты.
+    // Если новых ключей нет, но есть старые — конвертируем.
+    let p5h = load('pct5h', null);
+    let p7d = load('pct7d', null);
+    if (p5h === null) {
+      const old5h = parseFloat(load('used5h', 0)) || 0;
+      p5h = old5h > 100 ? (old5h / LIMIT_5H * 100).toFixed(1) : 0;
+    }
+    if (p7d === null) {
+      const old7d = parseFloat(load('used7d', 0)) || 0;
+      p7d = old7d > 100 ? (old7d / LIMIT_7D * 100).toFixed(1) : 0;
+    }
+    document.getElementById('pct5h').value = p5h;
+    document.getElementById('pct7d').value = p7d;
   }
 
-  ['overhead', 'used5h', 'used7d'].forEach(id => {
+  ['overhead', 'pct5h', 'pct7d'].forEach(id => {
     document.getElementById(id).addEventListener('input', function() {
       save(id, this.value);
+      updateHints();
       updateBars();
       recalcPrompt();
       recalcDialog();
+      recalcNextMessage();
     });
   });
 
@@ -418,42 +486,61 @@
     return '#4caf50';
   }
 
+  // ── Получить значения из полей ─────────────────────────────────────────────
   function getValues() {
-    const overhead = parseInt(document.getElementById('overhead').value) || 0;
-    const used5h   = parseInt(document.getElementById('used5h').value)   || 0;
-    const used7d   = parseInt(document.getElementById('used7d').value)   || 0;
-    return { overhead, used5h, used7d };
+    const overhead   = parseInt(document.getElementById('overhead').value) || 0;
+    const usedPct5h  = Math.min(100, Math.max(0, parseFloat(document.getElementById('pct5h').value) || 0));
+    const usedPct7d  = Math.min(100, Math.max(0, parseFloat(document.getElementById('pct7d').value) || 0));
+    const used5hTok  = LIMIT_5H * usedPct5h / 100;
+    const used7dTok  = LIMIT_7D * usedPct7d / 100;
+    const rem5h      = Math.max(0, LIMIT_5H - used5hTok);
+    const rem7d      = Math.max(0, LIMIT_7D - used7dTok);
+    return { overhead, usedPct5h, usedPct7d, used5hTok, used7dTok, rem5h, rem7d };
+  }
+
+  // ── Подсказки под полями ввода ─────────────────────────────────────────────
+  function updateHints() {
+    const { used5hTok, used7dTok } = getValues();
+    document.getElementById('hint5h').textContent =
+      '≈ ' + fmt(used5hTok) + ' из ' + fmt(LIMIT_5H) + ' токенов';
+    document.getElementById('hint7d').textContent =
+      '≈ ' + fmt(used7dTok) + ' из ' + fmt(LIMIT_7D) + ' токенов';
   }
 
   // ── Прогресс-бары ──────────────────────────────────────────────────────────
   function updateBars() {
-    const { used5h, used7d } = getValues();
+    const { usedPct5h, usedPct7d, used5hTok, used7dTok, rem5h, rem7d } = getValues();
 
-    const pct5h = Math.min(100, used5h / LIMIT_5H * 100);
-    const pct7d = Math.min(100, used7d / LIMIT_7D * 100);
-    const rem5h = Math.max(0, LIMIT_5H - used5h);
-    const rem7d = Math.max(0, LIMIT_7D - used7d);
+    const clamp5h = Math.min(100, usedPct5h);
+    const clamp7d = Math.min(100, usedPct7d);
 
-    document.getElementById('fill5h').style.width = pct5h.toFixed(1) + '%';
-    document.getElementById('fill5h').style.background = barColor(pct5h);
-    document.getElementById('fill7d').style.width = pct7d.toFixed(1) + '%';
-    document.getElementById('fill7d').style.background = barColor(pct7d);
+    document.getElementById('fill5h').style.width = clamp5h.toFixed(1) + '%';
+    document.getElementById('fill5h').style.background = barColor(clamp5h);
+    document.getElementById('fill7d').style.width = clamp7d.toFixed(1) + '%';
+    document.getElementById('fill7d').style.background = barColor(clamp7d);
 
-    document.getElementById('stats5h').textContent = fmt(used5h) + ' / ' + fmt(LIMIT_5H);
-    document.getElementById('stats7d').textContent = fmt(used7d) + ' / ' + fmt(LIMIT_7D);
+    document.getElementById('bar-pct5h').textContent = clamp5h.toFixed(1) + '% использовано';
+    document.getElementById('bar-pct5h').className = 'bar-pct ' + pctClass(clamp5h);
+    document.getElementById('bar-pct7d').textContent = clamp7d.toFixed(1) + '% использовано';
+    document.getElementById('bar-pct7d').className = 'bar-pct ' + pctClass(clamp7d);
+
+    document.getElementById('approx5h').textContent =
+      '≈ ' + fmt(used5hTok) + ' / ' + fmt(LIMIT_5H) + ' токенов';
+    document.getElementById('approx7d').textContent =
+      '≈ ' + fmt(used7dTok) + ' / ' + fmt(LIMIT_7D) + ' токенов';
 
     document.getElementById('rem5h').textContent =
-      'Осталось ' + fmt(rem5h) + ' токенов (' + (100 - pct5h).toFixed(0) + '%)';
+      'Осталось ' + fmt(rem5h) + ' токенов (' + (100 - clamp5h).toFixed(0) + '%)';
     document.getElementById('rem7d').textContent =
-      'Осталось ' + fmt(rem7d) + ' токенов (' + (100 - pct7d).toFixed(0) + '%)';
+      'Осталось ' + fmt(rem7d) + ' токенов (' + (100 - clamp7d).toFixed(0) + '%)';
   }
 
   // ── Section 2: Одиночный промпт ────────────────────────────────────────────
   function recalcPrompt() {
     const text = document.getElementById('prompt-input').value;
-    const { overhead, used5h, used7d } = getValues();
+    const { overhead, rem5h, rem7d } = getValues();
 
-    const box = document.getElementById('prompt-result');
+    const box  = document.getElementById('prompt-result');
     const hint = document.getElementById('prompt-hint');
 
     if (!text.trim()) {
@@ -465,16 +552,16 @@
     box.classList.add('visible');
     hint.style.display = 'none';
 
-    const msgTokens = countTokens(text);
+    const msgTokens   = countTokens(text);
     const totalTokens = msgTokens + overhead;
-    const rem5h = Math.max(1, LIMIT_5H - used5h);
-    const rem7d = Math.max(1, LIMIT_7D - used7d);
-    const pct5h = totalTokens / rem5h * 100;
-    const pct7d = totalTokens / rem7d * 100;
-    const afterRem5h = Math.max(0, rem5h - totalTokens);
-    const afterPct5h = afterRem5h / LIMIT_5H * 100;
+    const safeRem5h   = Math.max(1, rem5h);
+    const safeRem7d   = Math.max(1, rem7d);
+    const pct5h       = totalTokens / safeRem5h * 100;
+    const pct7d       = totalTokens / safeRem7d * 100;
+    const afterRem5h  = Math.max(0, rem5h - totalTokens);
+    const afterPct5h  = afterRem5h / LIMIT_5H * 100;
 
-    document.getElementById('p-msg-tokens').textContent = fmt(msgTokens) + ' токенов';
+    document.getElementById('p-msg-tokens').textContent  = fmt(msgTokens) + ' токенов';
     document.getElementById('p-overhead-val').textContent = fmt(overhead) + ' токенов';
     document.getElementById('p-total-tokens').textContent = fmt(totalTokens) + ' токенов';
 
@@ -495,7 +582,7 @@
   // ── Section 3: Полный диалог ───────────────────────────────────────────────
   function recalcDialog() {
     const text = document.getElementById('dialog-input').value;
-    const { overhead, used5h, used7d } = getValues();
+    const { rem5h, rem7d } = getValues();
 
     const meta = document.getElementById('dialog-result');
     const hint = document.getElementById('dialog-hint');
@@ -503,6 +590,7 @@
     if (!text.trim()) {
       meta.classList.remove('visible');
       hint.style.display = 'block';
+      recalcNextMessage(); // пересчитать следующее (без диалога)
       return;
     }
 
@@ -513,41 +601,34 @@
 
     const hasMarkers = /(Human:|Assistant:)/i.test(text);
     if (hasMarkers) {
-      // Разбиваем по меткам
       const parts = text.split(/(Human:|Assistant:)/i);
       let role = null;
       for (let i = 0; i < parts.length; i++) {
         const p = parts[i].trim();
-        if (/^Human:$/i.test(p)) { role = 'human'; continue; }
+        if (/^Human:$/i.test(p))     { role = 'human';     continue; }
         if (/^Assistant:$/i.test(p)) { role = 'assistant'; continue; }
         if (!p) continue;
         const t = countTokens(p);
-        if (role === 'human') humanTokens += t;
+        if (role === 'human')         humanTokens     += t;
         else if (role === 'assistant') assistantTokens += t;
-        else humanTokens += t; // до первой метки
+        else                           humanTokens     += t;
       }
       totalTokens = humanTokens + assistantTokens;
     } else {
-      totalTokens = countTokens(text);
-      humanTokens = totalTokens;
+      totalTokens     = countTokens(text);
+      humanTokens     = totalTokens;
       assistantTokens = 0;
     }
 
-    const rem5h = Math.max(1, LIMIT_5H - used5h);
-    const rem7d = Math.max(1, LIMIT_7D - used7d);
     const pct5h = totalTokens / LIMIT_5H * 100;
     const pct7d = totalTokens / LIMIT_7D * 100;
 
-    // Следующее сообщение = весь диалог как контекст + overhead + ~200 токенов нового сообщения
-    const nextTokens = totalTokens + overhead + 200;
-    const nextPct5h = nextTokens / rem5h * 100;
-    const afterRem5h = Math.max(0, rem5h - nextTokens);
-
-    document.getElementById('d-human-tokens').textContent = fmt(humanTokens) + ' ток.';
+    document.getElementById('d-human-tokens').textContent =
+      fmt(humanTokens) + ' ток.';
     document.getElementById('d-assistant-tokens').textContent =
       assistantTokens > 0 ? fmt(assistantTokens) + ' ток.' : '— (нет меток)';
-
-    document.getElementById('d-total-tokens').textContent = fmt(totalTokens) + ' токенов';
+    document.getElementById('d-total-tokens').textContent =
+      fmt(totalTokens) + ' токенов';
 
     const dp5h = document.getElementById('d-pct5h');
     dp5h.textContent = pct5h.toFixed(1) + '% от лимита';
@@ -557,17 +638,62 @@
     dp7d.textContent = pct7d.toFixed(1) + '% от лимита';
     dp7d.className = 'value ' + pctClass(pct7d);
 
-    document.getElementById('d-next-tokens').textContent = fmt(nextTokens) + ' токенов';
-
-    const dnp5h = document.getElementById('d-next-pct5h');
-    dnp5h.textContent = nextPct5h.toFixed(1) + '% от остатка 5ч';
-    dnp5h.className = 'value ' + pctClass(nextPct5h);
-
-    document.getElementById('d-forecast').textContent =
-      'После следующего сообщения останется ~' + fmt(afterRem5h) + ' токенов в 5ч окне';
+    recalcNextMessage(); // пересчитать с обновлёнными токенами диалога
   }
 
   document.getElementById('dialog-input').addEventListener('input', recalcDialog);
+
+  // ── Section 5: Следующее сообщение ─────────────────────────────────────────
+  function recalcNextMessage() {
+    const nextText   = document.getElementById('next-input').value;
+    const dialogText = document.getElementById('dialog-input').value;
+    const { overhead, rem5h, rem7d } = getValues();
+
+    const box  = document.getElementById('next-result');
+    const hint = document.getElementById('next-hint');
+
+    if (!nextText.trim()) {
+      box.classList.remove('visible');
+      hint.style.display = 'block';
+      return;
+    }
+
+    box.classList.add('visible');
+    hint.style.display = 'none';
+
+    const dialogTokens  = countTokens(dialogText);
+    const nextTokens    = countTokens(nextText);
+    const totalTokens   = dialogTokens + overhead + nextTokens;
+    const safeRem5h     = Math.max(1, rem5h);
+    const safeRem7d     = Math.max(1, rem7d);
+    const pct5h         = totalTokens / safeRem5h * 100;
+    const pct7d         = totalTokens / safeRem7d * 100;
+    const afterRem5h    = Math.max(0, rem5h - totalTokens);
+    const afterRem7d    = Math.max(0, rem7d - totalTokens);
+    const afterPct5h    = afterRem5h / LIMIT_5H * 100;
+    const afterPct7d    = afterRem7d / LIMIT_7D * 100;
+
+    document.getElementById('n-msg-tokens').textContent   = fmt(nextTokens) + ' токенов';
+    document.getElementById('n-dialog-tokens').textContent =
+      dialogTokens > 0 ? fmt(dialogTokens) + ' токенов' : '0 (диалог не вставлен)';
+    document.getElementById('n-overhead-val').textContent = fmt(overhead) + ' токенов';
+    document.getElementById('n-total-tokens').textContent = fmt(totalTokens) + ' токенов';
+
+    const np5h = document.getElementById('n-pct5h');
+    np5h.textContent = pct5h.toFixed(1) + '%';
+    np5h.className = 'value ' + pctClass(pct5h);
+
+    const np7d = document.getElementById('n-pct7d');
+    np7d.textContent = pct7d.toFixed(1) + '%';
+    np7d.className = 'value ' + pctClass(pct7d);
+
+    document.getElementById('n-forecast').textContent =
+      'После отправки останется: ' +
+      fmt(afterRem5h) + ' ток. в 5ч (' + afterPct5h.toFixed(0) + '%) · ' +
+      fmt(afterRem7d) + ' ток. за 7дн (' + afterPct7d.toFixed(0) + '%)';
+  }
+
+  document.getElementById('next-input').addEventListener('input', recalcNextMessage);
 
   // ── PWA Manifest (inline) ──────────────────────────────────────────────────
   const manifestData = {
@@ -585,11 +711,11 @@
     }]
   };
   const blob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
-  const manifestUrl = URL.createObjectURL(blob);
-  document.getElementById('manifest-link').href = manifestUrl;
+  document.getElementById('manifest-link').href = URL.createObjectURL(blob);
 
   // ── Инициализация ──────────────────────────────────────────────────────────
   loadSettings();
+  updateHints();
   updateBars();
 </script>
 </body>
