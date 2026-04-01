@@ -15,7 +15,7 @@
 5. Нажать **Deploy**
 6. После деплоя получить URL вида `https://token-calculator-xxx.vercel.app`
 
-**URL после деплоя:** _вставить сюда_
+**URL после деплоя:** https://claude-token-calculator.vercel.app
 
 ## Альтернатива: локальная сеть (Mac должен быть включён)
 
