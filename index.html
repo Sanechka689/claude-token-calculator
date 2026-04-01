@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Tokens">
+  <meta name="theme-color" content="#1a1a1a">
+  <title>Token Calculator — Claude Pro</title>
+  <link rel="manifest" id="manifest-link">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #f5f5f5;
+      color: #1a1a1a;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 16px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #1a1a1a;
+    }
+
+    section {
+      background: #fff;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid #e8e8e8;
+    }
+
+    h2 {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #888;
+      margin-bottom: 12px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 4px;
+      margin-top: 10px;
+    }
+    label:first-of-type { margin-top: 0; }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      background: #fafafa;
+      color: #1a1a1a;
+      appearance: textfield;
+      -moz-appearance: textfield;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+    input[type="number"]:focus {
+      outline: none;
+      border-color: #999;
+      background: #fff;
+    }
+
+    .limits-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .limit-box {
+      background: #f5f5f5;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+    .limit-box .limit-label { color: #888; font-size: 11px; margin-bottom: 2px; }
+    .limit-box .limit-val { font-weight: 600; color: #1a1a1a; }
+    .limit-box .limit-note { font-size: 11px; color: #aaa; }
+
+    textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+      background: #fafafa;
+      color: #1a1a1a;
+      resize: vertical;
+      min-height: 80px;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: #999;
+      background: #fff;
+    }
+
+    .result-box {
+      margin-top: 12px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      padding: 12px;
+      display: none;
+    }
+    .result-box.visible { display: block; }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 4px 0;
+      font-size: 13px;
+      border-bottom: 1px solid #efefef;
+    }
+    .result-row:last-child { border-bottom: none; }
+    .result-row .label { color: #666; }
+    .result-row .value { font-weight: 600; color: #1a1a1a; }
+    .result-row .value.warn { color: #e67e00; }
+    .result-row .value.danger { color: #d32f2f; }
+    .result-row .value.ok { color: #2e7d32; }
+
+    .forecast {
+      margin-top: 10px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      background: #f0f0f0;
+      color: #444;
+    }
+
+    /* Progress bars */
+    .bar-section { }
+    .bar-item { margin-bottom: 14px; }
+    .bar-item:last-child { margin-bottom: 0; }
+
+    .bar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .bar-title { font-size: 13px; font-weight: 600; color: #333; }
+    .bar-stats { font-size: 12px; color: #888; }
+
+    .bar-track {
+      height: 12px;
+      background: #ebebeb;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.3s ease, background-color 0.3s ease;
+    }
+
+    .bar-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 5px;
+    }
+    .bar-remaining { font-size: 12px; color: #888; }
+    .btn-update {
+      font-size: 11px;
+      padding: 3px 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: #fff;
+      color: #555;
+      cursor: pointer;
+    }
+    .btn-update:hover { background: #f0f0f0; }
+
+    .empty-hint {
+      font-size: 12px;
+      color: #bbb;
+      text-align: center;
+      padding: 8px 0;
+    }
+
+    /* Dialog specific */
+    .dialog-meta {
+      margin-top: 10px;
+      display: none;
+    }
+    .dialog-meta.visible { display: block; }
+    .dialog-parts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .part-box {
+      background: #f5f5f5;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+    .part-box .part-label { color: #888; margin-bottom: 2px; }
+    .part-box .part-val { font-weight: 600; font-size: 14px; }
+
+    @media (max-width: 400px) {
+      body { padding: 10px; }
+      .limits-row { grid-template-columns: 1fr; }
+      .dialog-parts { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<h1>Token Calculator — Claude Pro</h1>
+
+<!-- Section 1: Настройки сессии -->
+<section>
+  <h2>Настройки сессии</h2>
+
+  <label for="overhead">Overhead (токены системного промпта)</label>
+  <input type="number" id="overhead" value="5000" min="0" placeholder="5000">
+
+  <label for="used5h">Израсходовано в 5-часовом окне</label>
+  <input type="number" id="used5h" value="0" min="0" placeholder="0">
+
+  <label for="used7d">Израсходовано за 7 дней</label>
+  <input type="number" id="used7d" value="0" min="0" placeholder="0">
+
+  <div class="limits-row">
+    <div class="limit-box">
+      <div class="limit-label">Лимит 5ч окна</div>
+      <div class="limit-val">44 000</div>
+      <div class="limit-note">токенов</div>
+    </div>
+    <div class="limit-box">
+      <div class="limit-label">Лимит 7 дней</div>
+      <div class="limit-val">300 000</div>
+      <div class="limit-note">токенов ≈ оценка</div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 4: Прогресс-бары (показываем сразу после настроек) -->
+<section>
+  <h2>Использование лимитов</h2>
+  <div class="bar-section">
+    <div class="bar-item">
+      <div class="bar-header">
+        <span class="bar-title">5-часовое окно</span>
+        <span class="bar-stats" id="stats5h">0 / 44 000</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" id="fill5h" style="width:0%"></div>
+      </div>
+      <div class="bar-footer">
+        <span class="bar-remaining" id="rem5h">Осталось 44 000 токенов (100%)</span>
+        <button class="btn-update" onclick="document.getElementById('used5h').focus()">Обновить</button>
+      </div>
+    </div>
+    <div class="bar-item">
+      <div class="bar-header">
+        <span class="bar-title">7-дневное окно</span>
+        <span class="bar-stats" id="stats7d">0 / 300 000</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" id="fill7d" style="width:0%"></div>
+      </div>
+      <div class="bar-footer">
+        <span class="bar-remaining" id="rem7d">Осталось 300 000 токенов (100%)</span>
+        <button class="btn-update" onclick="document.getElementById('used7d').focus()">Обновить</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 2: Одиночный промпт -->
+<section>
+  <h2>Одиночный промпт</h2>
+  <textarea id="prompt-input" placeholder="Вставьте текст промпта или сообщения..." rows="4"></textarea>
+
+  <div class="result-box" id="prompt-result">
+    <div class="result-row">
+      <span class="label">Токены сообщения</span>
+      <span class="value" id="p-msg-tokens">—</span>
+    </div>
+    <div class="result-row">
+      <span class="label">+ Overhead</span>
+      <span class="value" id="p-overhead-val">—</span>
+    </div>
+    <div class="result-row" style="padding-top:6px;">
+      <span class="label" style="font-weight:600;color:#333;">Итого токенов запроса</span>
+      <span class="value" id="p-total-tokens" style="font-size:15px;">—</span>
+    </div>
+    <div class="result-row">
+      <span class="label">% от остатка 5ч окна</span>
+      <span class="value" id="p-pct5h">—</span>
+    </div>
+    <div class="result-row">
+      <span class="label">% от остатка 7дн окна</span>
+      <span class="value" id="p-pct7d">—</span>
+    </div>
+    <div class="forecast" id="p-forecast"></div>
+  </div>
+  <div class="empty-hint" id="prompt-hint">Начните вводить текст — расчёт появится автоматически</div>
+</section>
+
+<!-- Section 3: Полный диалог -->
+<section>
+  <h2>Полный диалог</h2>
+  <textarea id="dialog-input" placeholder="Вставьте весь диалог (можно с метками Human: / Assistant: или просто текстом)..." rows="5"></textarea>
+
+  <div class="dialog-meta" id="dialog-result">
+    <div class="dialog-parts">
+      <div class="part-box">
+        <div class="part-label">Human (input)</div>
+        <div class="part-val" id="d-human-tokens">—</div>
+      </div>
+      <div class="part-box">
+        <div class="part-label">Assistant (output)</div>
+        <div class="part-val" id="d-assistant-tokens">—</div>
+      </div>
+    </div>
+
+    <div class="result-box visible">
+      <div class="result-row">
+        <span class="label">Всего токенов в диалоге</span>
+        <span class="value" id="d-total-tokens">—</span>
+      </div>
+      <div class="result-row">
+        <span class="label">% от 5ч лимита</span>
+        <span class="value" id="d-pct5h">—</span>
+      </div>
+      <div class="result-row">
+        <span class="label">% от 7дн лимита</span>
+        <span class="value" id="d-pct7d">—</span>
+      </div>
+      <div class="result-row" style="padding-top:6px;">
+        <span class="label" style="font-weight:600;color:#333;">Следующее сообщение будет стоить</span>
+        <span class="value" id="d-next-tokens" style="font-size:15px;">—</span>
+      </div>
+      <div class="result-row">
+        <span class="label">% от остатка 5ч</span>
+        <span class="value" id="d-next-pct5h">—</span>
+      </div>
+      <div class="forecast" id="d-forecast"></div>
+    </div>
+  </div>
+  <div class="empty-hint" id="dialog-hint">Начните вводить текст — расчёт появится автоматически</div>
+</section>
+
+<script>
+  // ── Константы ──────────────────────────────────────────────────────────────
+  const LIMIT_5H = 44000;
+  const LIMIT_7D = 300000;
+  const DEFAULT_OVERHEAD = 5000;
+
+  // ── localStorage ───────────────────────────────────────────────────────────
+  function save(key, value) {
+    try { localStorage.setItem('tc_' + key, value); } catch(e) {}
+  }
+  function load(key, fallback) {
+    try {
+      const v = localStorage.getItem('tc_' + key);
+      return v !== null ? v : fallback;
+    } catch(e) { return fallback; }
+  }
+
+  function loadSettings() {
+    document.getElementById('overhead').value = load('overhead', DEFAULT_OVERHEAD);
+    document.getElementById('used5h').value  = load('used5h', 0);
+    document.getElementById('used7d').value  = load('used7d', 0);
+  }
+
+  ['overhead', 'used5h', 'used7d'].forEach(id => {
+    document.getElementById(id).addEventListener('input', function() {
+      save(id, this.value);
+      updateBars();
+      recalcPrompt();
+      recalcDialog();
+    });
+  });
+
+  // ── Подсчёт токенов ────────────────────────────────────────────────────────
+  function countTokens(text) {
+    if (!text) return 0;
+    const codeMatches = text.match(/```[\s\S]*?```/g) || [];
+    const codeStr = codeMatches.join('');
+    const plainStr = text.replace(/```[\s\S]*?```/g, '');
+    return Math.ceil(codeStr.length / 3.2 + plainStr.length / 3.8);
+  }
+
+  // ── Форматирование ──────────────────────────────────────────────────────────
+  function fmt(n) {
+    return Math.round(n).toLocaleString('ru-RU');
+  }
+
+  function pctClass(pct) {
+    if (pct >= 80) return 'danger';
+    if (pct >= 50) return 'warn';
+    return 'ok';
+  }
+
+  function barColor(pct) {
+    if (pct >= 80) return '#f44336';
+    if (pct >= 50) return '#ff9800';
+    return '#4caf50';
+  }
+
+  function getValues() {
+    const overhead = parseInt(document.getElementById('overhead').value) || 0;
+    const used5h   = parseInt(document.getElementById('used5h').value)   || 0;
+    const used7d   = parseInt(document.getElementById('used7d').value)   || 0;
+    return { overhead, used5h, used7d };
+  }
+
+  // ── Прогресс-бары ──────────────────────────────────────────────────────────
+  function updateBars() {
+    const { used5h, used7d } = getValues();
+
+    const pct5h = Math.min(100, used5h / LIMIT_5H * 100);
+    const pct7d = Math.min(100, used7d / LIMIT_7D * 100);
+    const rem5h = Math.max(0, LIMIT_5H - used5h);
+    const rem7d = Math.max(0, LIMIT_7D - used7d);
+
+    document.getElementById('fill5h').style.width = pct5h.toFixed(1) + '%';
+    document.getElementById('fill5h').style.background = barColor(pct5h);
+    document.getElementById('fill7d').style.width = pct7d.toFixed(1) + '%';
+    document.getElementById('fill7d').style.background = barColor(pct7d);
+
+    document.getElementById('stats5h').textContent = fmt(used5h) + ' / ' + fmt(LIMIT_5H);
+    document.getElementById('stats7d').textContent = fmt(used7d) + ' / ' + fmt(LIMIT_7D);
+
+    document.getElementById('rem5h').textContent =
+      'Осталось ' + fmt(rem5h) + ' токенов (' + (100 - pct5h).toFixed(0) + '%)';
+    document.getElementById('rem7d').textContent =
+      'Осталось ' + fmt(rem7d) + ' токенов (' + (100 - pct7d).toFixed(0) + '%)';
+  }
+
+  // ── Section 2: Одиночный промпт ────────────────────────────────────────────
+  function recalcPrompt() {
+    const text = document.getElementById('prompt-input').value;
+    const { overhead, used5h, used7d } = getValues();
+
+    const box = document.getElementById('prompt-result');
+    const hint = document.getElementById('prompt-hint');
+
+    if (!text.trim()) {
+      box.classList.remove('visible');
+      hint.style.display = 'block';
+      return;
+    }
+
+    box.classList.add('visible');
+    hint.style.display = 'none';
+
+    const msgTokens = countTokens(text);
+    const totalTokens = msgTokens + overhead;
+    const rem5h = Math.max(1, LIMIT_5H - used5h);
+    const rem7d = Math.max(1, LIMIT_7D - used7d);
+    const pct5h = totalTokens / rem5h * 100;
+    const pct7d = totalTokens / rem7d * 100;
+    const afterRem5h = Math.max(0, rem5h - totalTokens);
+    const afterPct5h = afterRem5h / LIMIT_5H * 100;
+
+    document.getElementById('p-msg-tokens').textContent = fmt(msgTokens) + ' токенов';
+    document.getElementById('p-overhead-val').textContent = fmt(overhead) + ' токенов';
+    document.getElementById('p-total-tokens').textContent = fmt(totalTokens) + ' токенов';
+
+    const el5h = document.getElementById('p-pct5h');
+    el5h.textContent = pct5h.toFixed(1) + '%';
+    el5h.className = 'value ' + pctClass(pct5h);
+
+    const el7d = document.getElementById('p-pct7d');
+    el7d.textContent = pct7d.toFixed(1) + '%';
+    el7d.className = 'value ' + pctClass(pct7d);
+
+    document.getElementById('p-forecast').textContent =
+      'После отправки останется ' + fmt(afterRem5h) + ' токенов в 5ч окне (' + afterPct5h.toFixed(0) + '% от лимита)';
+  }
+
+  document.getElementById('prompt-input').addEventListener('input', recalcPrompt);
+
+  // ── Section 3: Полный диалог ───────────────────────────────────────────────
+  function recalcDialog() {
+    const text = document.getElementById('dialog-input').value;
+    const { overhead, used5h, used7d } = getValues();
+
+    const meta = document.getElementById('dialog-result');
+    const hint = document.getElementById('dialog-hint');
+
+    if (!text.trim()) {
+      meta.classList.remove('visible');
+      hint.style.display = 'block';
+      return;
+    }
+
+    meta.classList.add('visible');
+    hint.style.display = 'none';
+
+    let humanTokens = 0, assistantTokens = 0, totalTokens = 0;
+
+    const hasMarkers = /(Human:|Assistant:)/i.test(text);
+    if (hasMarkers) {
+      // Разбиваем по меткам
+      const parts = text.split(/(Human:|Assistant:)/i);
+      let role = null;
+      for (let i = 0; i < parts.length; i++) {
+        const p = parts[i].trim();
+        if (/^Human:$/i.test(p)) { role = 'human'; continue; }
+        if (/^Assistant:$/i.test(p)) { role = 'assistant'; continue; }
+        if (!p) continue;
+        const t = countTokens(p);
+        if (role === 'human') humanTokens += t;
+        else if (role === 'assistant') assistantTokens += t;
+        else humanTokens += t; // до первой метки
+      }
+      totalTokens = humanTokens + assistantTokens;
+    } else {
+      totalTokens = countTokens(text);
+      humanTokens = totalTokens;
+      assistantTokens = 0;
+    }
+
+    const rem5h = Math.max(1, LIMIT_5H - used5h);
+    const rem7d = Math.max(1, LIMIT_7D - used7d);
+    const pct5h = totalTokens / LIMIT_5H * 100;
+    const pct7d = totalTokens / LIMIT_7D * 100;
+
+    // Следующее сообщение = весь диалог как контекст + overhead + ~200 токенов нового сообщения
+    const nextTokens = totalTokens + overhead + 200;
+    const nextPct5h = nextTokens / rem5h * 100;
+    const afterRem5h = Math.max(0, rem5h - nextTokens);
+
+    document.getElementById('d-human-tokens').textContent = fmt(humanTokens) + ' ток.';
+    document.getElementById('d-assistant-tokens').textContent =
+      assistantTokens > 0 ? fmt(assistantTokens) + ' ток.' : '— (нет меток)';
+
+    document.getElementById('d-total-tokens').textContent = fmt(totalTokens) + ' токенов';
+
+    const dp5h = document.getElementById('d-pct5h');
+    dp5h.textContent = pct5h.toFixed(1) + '% от лимита';
+    dp5h.className = 'value ' + pctClass(pct5h);
+
+    const dp7d = document.getElementById('d-pct7d');
+    dp7d.textContent = pct7d.toFixed(1) + '% от лимита';
+    dp7d.className = 'value ' + pctClass(pct7d);
+
+    document.getElementById('d-next-tokens').textContent = fmt(nextTokens) + ' токенов';
+
+    const dnp5h = document.getElementById('d-next-pct5h');
+    dnp5h.textContent = nextPct5h.toFixed(1) + '% от остатка 5ч';
+    dnp5h.className = 'value ' + pctClass(nextPct5h);
+
+    document.getElementById('d-forecast').textContent =
+      'После следующего сообщения останется ~' + fmt(afterRem5h) + ' токенов в 5ч окне';
+  }
+
+  document.getElementById('dialog-input').addEventListener('input', recalcDialog);
+
+  // ── PWA Manifest (inline) ──────────────────────────────────────────────────
+  const manifestData = {
+    name: 'Token Calculator',
+    short_name: 'Tokens',
+    description: 'Калькулятор токенов Claude Pro',
+    display: 'standalone',
+    start_url: '.',
+    background_color: '#ffffff',
+    theme_color: '#1a1a1a',
+    icons: [{
+      src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%231a1a1a'/%3E%3Ctext x='96' y='130' text-anchor='middle' font-size='100' fill='white'%3E⟨T⟩%3C/text%3E%3C/svg%3E",
+      sizes: '192x192',
+      type: 'image/svg+xml'
+    }]
+  };
+  const blob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
+  const manifestUrl = URL.createObjectURL(blob);
+  document.getElementById('manifest-link').href = manifestUrl;
+
+  // ── Инициализация ──────────────────────────────────────────────────────────
+  loadSettings();
+  updateBars();
+</script>
+</body>
+</html>
