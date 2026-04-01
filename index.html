@@ -230,7 +230,7 @@
   <h2>Настройки сессии</h2>
 
   <label for="overhead">Overhead (токены системного промпта)</label>
-  <input type="number" id="overhead" value="5000" min="0" placeholder="5000">
+  <input type="number" id="overhead" value="16500" min="0" placeholder="16500">
 
   <label for="used5h">Израсходовано в 5-часовом окне</label>
   <input type="number" id="used5h" value="0" min="0" placeholder="0">
@@ -364,7 +364,7 @@
   // ── Константы ──────────────────────────────────────────────────────────────
   const LIMIT_5H = 44000;
   const LIMIT_7D = 300000;
-  const DEFAULT_OVERHEAD = 5000;
+  const DEFAULT_OVERHEAD = 16500;
 
   // ── localStorage ───────────────────────────────────────────────────────────
   function save(key, value) {
